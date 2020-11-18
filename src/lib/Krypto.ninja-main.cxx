@@ -1,4 +1,3 @@
-#include "Krypto.ninja.h"
                                  /*                                 */ // youtu.be/dVlGmdl-g9Q
           ;;;;;;;;;;;;;;;;;;;;;;   /*         Wherever you go..     */
           ;;;;;    ;;;;    ;;;;;     /*       Whatever you do..     */ // youtu.be/DKSO5YlYbOg
@@ -11,12 +10,19 @@ using namespace    ₿;    ;;;;;;;/*(  <>  )`-. Or how my OS breaks,  */ // yout
           ;;;;;;;;;;;;;    ;;;;;/*`.____;'    Day after day.        */
           ;;;;;;;;;;;;;;;;;;;;;;/*                               :wq*/ // youtu.be/AMCeEoOgSvc
                               /*                                    */
-#include "trading-bot.h"                                               // youtu.be/dp5hsDgENLk
+#include using_Makefile(data)                                          // youtu.be/dp5hsDgENLk
+#include using_Makefile(main)
 
 int main(int argc, char** argv) {
-  K.main(argc, argv)->wait();
-  return EXIT_FAILURE;
+  K.main                                      (argc, argv)->wait();
+  return                                      ((((EXIT_FAILURE))));
 };
+
+#ifndef NDEBUG
+#include DEBUG_FRAMEWORK
+#include DEBUG_SCENARIOS
+#endif
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                        /*K\*/                         ;
          /*    .        kKKKKK,       .         *

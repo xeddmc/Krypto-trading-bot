@@ -1,5 +1,3 @@
-#ifndef K_LANG_H_
-#define K_LANG_H_
 //! \file
 //! \brief Available language interface.
 
@@ -72,6 +70,16 @@ using Amount = double;
 using Clock  = long long int;
 
 //! \def
+//! \brief Run test units on exit unless NDEBUG.
+//! \note  See test/unit_testing_framework.cxx
+#ifdef NDEBUG
+#  define EXIT ::exit
+#else
+#  define EXIT catch_exit
+   [[noreturn]] void catch_exit(const int);
+#endif
+
+//! \def
 //! \brief Number of ticks in milliseconds, since Thu Jan  1 00:00:00 1970.
 #define Tstamp chrono::duration_cast<chrono::milliseconds>(     \
                  chrono::system_clock::now().time_since_epoch() \
@@ -80,7 +88,7 @@ using Clock  = long long int;
 //! \def
 //! \brief Archimedes of Syracuse was here, since two millenniums ago.
 #ifndef M_PI_2
-#define M_PI_2 1.5707963267948965579989817342720925807952880859375
+#define M_PI_2 1.57079632679489661923
 #endif
 
 //! \def
@@ -92,7 +100,6 @@ using Clock  = long long int;
 #define MSG_NOSIGNAL        0
 #define accept4(a, b, c, d) accept(a, b, c)
 #define strsignal           to_string
-#define SIGUSR1             SIGABRT
 #endif
 
 //! \def
@@ -125,5 +132,3 @@ using Clock  = long long int;
 //! \note  "any" means "year" in Catalan.
 //! \link  wikipedia.org/wiki/National_Day_of_Catalonia
 #define ANY_NUM 1714
-
-#endif

@@ -1,5 +1,3 @@
-#ifndef K_DATA_H_
-#define K_DATA_H_
 //! \file
 //! \brief Data transport/transform helpers.
 
@@ -114,11 +112,12 @@ namespace ₿ {
 
   class Loop {
     public_friend:
+      using TimeEvent = function<void(const unsigned int&)>;
       class Timer {
         private:
                   unsigned int tick  = 0;
           mutable unsigned int ticks = 300;
-          vector<function<void(const unsigned int&)>> jobs;
+             vector<TimeEvent> jobs;
         public:
           void ticks_factor(const unsigned int &factor) const {
             ticks = 300 * (factor ?: 1);
@@ -127,13 +126,13 @@ namespace ₿ {
             for (const auto &it : jobs) it(tick);
             tick = (tick + 1) % ticks;
           };
-          void push_back(const function<void(const unsigned int&)> &data) {
+          void push_back(const TimeEvent &data) {
             jobs.push_back(data);
           };
       };
       class Async {
         public_friend:
-          template<typename T> class Write {
+          template<typename T> class Event {
             private_friend:
               class Wakeup {
                 private:
@@ -157,13 +156,8 @@ namespace ₿ {
               void try_write(const T &rawdata) const {
                 if (write) write(rawdata);
               };
-              void wait_for(
-                Loop *const loop,
-                const function<vector<T>()>    j,
-                const function<void(const T&)> w = nullptr
-              ) {
-                job   = j;
-                write = w;
+              void wait_for(Loop *const loop, const function<vector<T>()> j) {
+                job = j;
                 event = loop->async([&]() {
                   if (data.valid())
                     for (const T &it : data.get()) try_write(it);
@@ -206,7 +200,7 @@ namespace ₿ {
       };
     public:
       virtual          void  timer_ticks_factor(const unsigned int&) const        = 0;
-      virtual          void  timer_1s(const function<void(const unsigned int&)>&) = 0;
+      virtual          void  timer_1s(const TimeEvent&)                           = 0;
       virtual         Async *async(const function<void()>&)                       = 0;
       virtual curl_socket_t  poll()                                               = 0;
       virtual          void  walk()                                               = 0;
@@ -248,7 +242,6 @@ namespace ₿ {
       };
       class Poll: public Loop::Poll {
         protected:
-          using SOCK_OPTVAL  = char;
           const int EPOLLIN  = UV_READABLE;
           const int EPOLLOUT = UV_WRITABLE;
         private:
@@ -289,7 +282,7 @@ namespace ₿ {
       void timer_ticks_factor(const unsigned int &factor) const override {
         timer.ticks_factor(factor);
       };
-      void timer_1s(const function<void(const unsigned int&)> &data) override {
+      void timer_1s(const TimeEvent &data) override {
         timer.push_back(data);
       };
       Loop::Async *async(const function<void()> &data) override {
@@ -313,8 +306,6 @@ namespace ₿ {
   class Events: public Loop {
     public_friend:
       class Poll: public Loop::Poll {
-        protected:
-          using SOCK_OPTVAL = int;
         private:
           curl_socket_t loopfd = 0;
         public:
@@ -394,7 +385,7 @@ namespace ₿ {
       void timer_ticks_factor(const unsigned int &factor) const override {
         timer.ticks_factor(factor);
       };
-      void timer_1s(const function<void(const unsigned int&)> &data) override {
+      void timer_1s(const TimeEvent &data) override {
         timer.push_back(data);
       };
       Loop::Async *async(const function<void()> &data) override {
@@ -423,9 +414,11 @@ namespace ₿ {
   };
 #endif
 
+  static function<void(CURL*)> curl_global_setopt = [](CURL *curl) {
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "K");
+  };
+
   class Curl {
-    public:
-      static function<void(CURL*)> global_setopt;
     private_friend:
       class Easy: public Events::Poll {
         private:
@@ -454,7 +447,7 @@ namespace ₿ {
             in.clear();
             CURLcode rc;
             if (CURLE_OK == (rc = init())) {
-              global_setopt(curl);
+              curl_global_setopt(curl);
               curl_easy_setopt(curl, CURLOPT_URL, url.data());
               curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
               curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
@@ -572,7 +565,7 @@ namespace ₿ {
             CURL *curl = curl_easy_init();
             if (curl) {
               custom_setopt(curl);
-              global_setopt(curl);
+              curl_global_setopt(curl);
               curl_easy_setopt(curl, CURLOPT_URL, url.data());
               curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write);
               curl_easy_setopt(curl, CURLOPT_WRITEDATA, &reply);
@@ -729,45 +722,44 @@ namespace ₿ {
         BIO_free_all(bio);
         return string(output, len);
       };
-      static string SHA1(const string &input, const bool &hex = false) {
-        return SHA(input, hex, ::SHA1, SHA_DIGEST_LENGTH);
+      static string SHA1  (const string &input, const bool &rawbin = false) {
+        return SHA(input, rawbin, ::SHA1,   SHA_DIGEST_LENGTH);
       };
-      static string SHA256(const string &input, const bool &hex = false) {
-        return SHA(input, hex, ::SHA256, SHA256_DIGEST_LENGTH);
+      static string SHA256(const string &input, const bool &rawbin = false) {
+        return SHA(input, rawbin, ::SHA256, SHA256_DIGEST_LENGTH);
       };
-      static string SHA512(const string &input) {
-        return SHA(input, false, ::SHA512, SHA512_DIGEST_LENGTH);
+      static string SHA512(const string &input, const bool &rawbin = false) {
+        return SHA(input, rawbin, ::SHA512, SHA512_DIGEST_LENGTH);
       };
-      static string HMAC1(const string &key, const string &input, const bool &hex = false) {
-        return HMAC(key, input, hex, EVP_sha1, SHA_DIGEST_LENGTH);
+      static string HMAC1  (const string &key, const string &input, const bool &rawbin = false) {
+        return HMAC(key, input, rawbin, EVP_sha1,   SHA_DIGEST_LENGTH);
       };
-      static string HMAC256(const string &key, const string &input, const bool &hex = false) {
-        return HMAC(key, input, hex, EVP_sha256, SHA256_DIGEST_LENGTH);
+      static string HMAC256(const string &key, const string &input, const bool &rawbin = false) {
+        return HMAC(key, input, rawbin, EVP_sha256, SHA256_DIGEST_LENGTH);
       };
-      static string HMAC512(const string &key, const string &input, const bool &hex = false) {
-        return HMAC(key, input, hex, EVP_sha512, SHA512_DIGEST_LENGTH);
+      static string HMAC512(const string &key, const string &input, const bool &rawbin = false) {
+        return HMAC(key, input, rawbin, EVP_sha512, SHA512_DIGEST_LENGTH);
       };
-      static string HMAC384(const string &key, const string &input, const bool &hex = false) {
-        return HMAC(key, input, hex, EVP_sha384, SHA384_DIGEST_LENGTH);
+      static string HMAC384(const string &key, const string &input, const bool &rawbin = false) {
+        return HMAC(key, input, rawbin, EVP_sha384, SHA384_DIGEST_LENGTH);
       };
     private:
       static string SHA(
         const string  &input,
-        const bool    &hex,
+        const bool    &rawbin,
         unsigned char *(*md)(const unsigned char*, size_t, unsigned char*),
         const int     &digest_len
       ) {
         unsigned char digest[digest_len];
-        md((unsigned char*)input.data(), input.length(), (unsigned char*)&digest);
-        char output[digest_len * 2 + 1];
-        for (int i = 0; i < digest_len; i++)
-          sprintf(&output[i * 2], "%02x", (unsigned int)digest[i]);
-        return hex ? HEX(output) : output;
+        md((unsigned char*)input.data(), input.length(), digest);
+        return rawbin
+             ? string((char*)digest, digest_len)
+             :    HEX((char*)digest, digest_len);
       };
       static string HMAC(
         const string &key,
         const string &input,
-        const bool   &hex,
+        const bool   &rawbin,
         const EVP_MD *(evp_md)(),
         const int    &digest_len
       ) {
@@ -778,19 +770,16 @@ namespace ₿ {
           (unsigned char*)key.data(), key.length(),
           nullptr, nullptr
         );
-        char output[digest_len * 2 + 1];
-        for (int i = 0; i < digest_len; i++)
-          sprintf(&output[i * 2], "%02x", (unsigned int)digest[i]);
-        return hex ? HEX(output) : output;
+        return rawbin
+             ? string((char*)digest, digest_len)
+             :    HEX((char*)digest, digest_len);
       };
-      static string HEX(const string &input) {
-        const unsigned int len = input.length();
-        string output;
-        for (unsigned int i = 0; i < len; i += 2)
-          output.push_back(
-            (char)(int)strtol(input.substr(i, 2).data(), nullptr, 16)
-          );
-        return output;
+      static string HEX(const char *digest, const int &digest_len) {
+        stringstream output;
+        output << hex << setfill('0');
+        for (int i = 0; i < digest_len; i++)
+          output << setw(2) << (digest[i] & 0xFF);
+        return output.str();
       };
   };
 
@@ -816,7 +805,7 @@ namespace ₿ {
           };
           void cork(const int &enable) const {
 #ifndef _WIN32
-            setsockopt(sockfd, IPPROTO_TCP, TCP_CORK, &enable, sizeof(int));
+            setsockopt(sockfd, IPPROTO_TCP, TCP_CORK, &enable, sizeof(enable));
 #endif
 #ifdef __APPLE__
             if (!enable) ::send(sockfd, "", 0, MSG_NOSIGNAL);
@@ -956,7 +945,7 @@ namespace ₿ {
             if (ssl) {
               if (!out.empty()) {
                 cork(1);
-                int n = SSL_write(ssl, out.data(), (int)out.length());
+                int n = SSL_write(ssl, out.data(), out.length());
                 switch (SSL_get_error(ssl, n)) {
                   case SSL_ERROR_WANT_READ:
                   case SSL_ERROR_WANT_WRITE:  break;
@@ -1064,8 +1053,14 @@ namespace ₿ {
                   if (rp->ai_family == AF_INET)
                     socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
               if (sockfd) {
-                const int enabled = 1;
-                setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (SOCK_OPTVAL*)&enabled, sizeof(int));
+                const
+#ifdef _WIN32
+                char
+#else
+                int
+#endif
+                enabled = 1;
+                setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enabled, sizeof(enabled));
                 if (::bind(sockfd, rp->ai_addr, rp->ai_addrlen) or ::listen(sockfd, 512))
                   shutdown();
                 else {
@@ -1175,7 +1170,7 @@ namespace ₿ {
             if (clientfd == -1) return;
 #ifdef __APPLE__
             const int noSigpipe = 1;
-            setsockopt(clientfd, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(int));
+            setsockopt(clientfd, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(noSigpipe));
 #endif
             SSL *ssl = nullptr;
             if (ctx) {
@@ -1192,7 +1187,7 @@ namespace ₿ {
 #ifdef __APPLE__
             else {
               const int noSigpipe = 1;
-              setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(int));
+              setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, &noSigpipe, sizeof(noSigpipe));
             }
 #endif
           };
@@ -1281,5 +1276,3 @@ namespace ₿ {
       };
   };
 }
-
-#endif

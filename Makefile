@@ -1,48 +1,78 @@
-K       ?= K.sh
-MAJOR    = 0
-MINOR    = 5
-PATCH    = 3
-BUILD    = 71
-SOURCE  := $(notdir $(wildcard src/bin/*))
-CARCH    = x86_64-linux-gnu      \
-           arm-linux-gnueabihf   \
-           aarch64-linux-gnu     \
-           x86_64-apple-darwin17 \
-           x86_64-w64-mingw32
+K         ?= K.sh
+MAJOR      = 0
+MINOR      = 5
+PATCH      = 4
+BUILD      = 39
 
-CHOST   ?= $(shell test -n "`command -v g++`" && g++ -dumpmachine \
-             || echo $(subst build-,,$(firstword $(wildcard build-*))))
-ABI     ?= $(shell echo '\#include <string>'   \
-             | $(CHOST)-g++ -x c++ -dM -E -    \
-             | grep '_GLIBCXX_USE_CXX11_ABI 1' \
-             | wc -l                           )
+OBLIGATORY = DISCLAIMER: This is strict non-violent software: \
+           \nif you hurt other living creatures, please stop; \
+           \notherwise remove all copies of the software now.
 
-KHOST   := $(shell echo $(CHOST)                               \
-             | sed 's/-\([a-z_0-9]*\)-\(linux\)$$/-\2-\1/'     \
-             | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' \
-             | sed 's/^w64/win64/'                             )
-KLOCAL  := build-$(KHOST)/local
+PERMISSIVE = This is free software: the UI and quoting engine are open source, \
+           \nfeel free to hack both as you need.                               \
+                                                                               \
+           \nThis is non-free software: built-in gateway exchange integrations \
+           \nare licensed by/under the law of my grandma (since last century), \
+           \nfeel free to crack all as you need.
 
-ERR      = *** K require g++ v7 or greater, but it was not found.
-HINT    := consider a symlink at /usr/bin/$(CHOST)-g++ pointing to your g++-7 or g++-8 executable
+SOURCE    := $(notdir $(wildcard src/bin/*))
+CARCH      = x86_64-linux-gnu      \
+             arm-linux-gnueabihf   \
+             aarch64-linux-gnu     \
+             x86_64-apple-darwin17 \
+             x86_64-w64-mingw32
 
-STEP     = $(shell tput setaf 2;tput setab 0)Building $(1)..$(shell tput sgr0)
-KARGS   := -std=c++17 -O3 -pthread -DK_0_GIT='"$(shell   \
-  cat .git/refs/heads/master 2>/dev/null || echo HEAD)"' \
-  -DK_STAMP='"$(shell date "+%Y-%m-%d %H:%M:%S")"'       \
-  -DK_0_DAY='"v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'     \
-  -DK_BUILD='"$(KHOST)"'      -I$(KLOCAL)/include        \
-  -DK_SOURCE='"K-$(KSRC)"'    -I$(realpath src/lib)      \
-  $(KLOCAL)/lib/K-$(KHOST).$(ABI).a                      \
-  $(KLOCAL)/lib/libncurses.a  $(KLOCAL)/lib/libsqlite3.a \
-  $(KLOCAL)/lib/libcurl.a     $(KLOCAL)/lib/libcares.a   \
-  $(KLOCAL)/lib/libssl.a      $(KLOCAL)/lib/libcrypto.a  \
-  $(KLOCAL)/lib/libz.a                                   \
-  $(wildcard                                             \
-    $(KLOCAL)/lib/K-$(KSRC)-assets.o                     \
-    $(KLOCAL)/lib/libuv.dll.a                            \
-    $(KLOCAL)/lib/libuv.a                                \
-  )
+CHOST     ?= $(shell test -n "`command -v g++`" && g++ -dumpmachine \
+               || echo $(subst build-,,$(firstword $(wildcard build-*))))
+ABI       ?= $(shell echo '\#include <string>'             \
+               | $(CHOST)-g++ -x c++ -dM -E - 2> /dev/null \
+               | grep '_GLIBCXX_USE_CXX11_ABI 1'           \
+               | wc -l                                     )
+
+KHOST     := $(shell echo $(CHOST)                               \
+               | sed 's/-\([a-z_0-9]*\)-\(linux\)$$/-\2-\1/'     \
+               | sed 's/\([a-z_0-9]*\)-\([a-z_0-9]*\)-.*/\2-\1/' \
+               | sed 's/^w64/win64/'                             )
+KLOCAL    := build-$(KHOST)/local
+
+ERR        = *** K require g++ v7 or greater, but it was not found.
+HINT      := consider a symlink at /usr/bin/$(CHOST)-g++ pointing to your g++-7 or g++-8 executable
+STEP       = $(shell tput setaf 2;tput setab 0)Building $(1)..$(shell tput sgr0)
+
+KARGS     := -std=c++17 -O3 -pthread -D'K_HEAD="$(shell  \
+    git rev-parse HEAD 2>/dev/null || echo HEAD          \
+  )"' -D'K_BUILD="$(KHOST)"' -D'K_SOURCE="K-$(KSRC)"'    \
+  -D'K_STAMP="$(shell date "+%Y-%m-%d %H:%M:%S")"'       \
+  -D'K_0_DAY="v$(MAJOR).$(MINOR).$(PATCH)+$(BUILD)"'     \
+  -I$(KLOCAL)/include $(addprefix $(KLOCAL)/lib/,        \
+    K-$(KHOST).$(ABI).a                                  \
+    libncurses.a                                         \
+    libsqlite3.a                                         \
+    libcurl.a                                            \
+    libssl.a  libcrypto.a                                \
+    libz.a                                               \
+  ) $(wildcard $(addprefix $(KLOCAL)/lib/,               \
+    K-$(KSRC)-assets.o                                   \
+    libuv.dll.a libuv.a                                  \
+  )) $(addprefix -include src/lib/Krypto.ninja-,         \
+       $(addsuffix .h,                                   \
+         lang                                            \
+         data                                            \
+         apis                                            \
+         bots                                            \
+       )                                                 \
+  ) -D'DEBUG_FRAMEWORK="Krypto.ninja-test.h"'            \
+    -D'DEBUG_SCENARIOS=<$(or                             \
+      $(realpath src/bin/$(KSRC)/$(KSRC).test.h),        \
+      /dev/null                                          \
+    )>'                                                  \
+    -D'using_Makefile(x)=<$(abspath                      \
+      src/bin/$(KSRC)                                    \
+    )/using_\#\#x>'                                      \
+    -D'using_data=$(KSRC).data.h'                        \
+    -D'using_main=$(KSRC).main.h'                        \
+-D'OBLIGATORY_analpaper_SOFTWARE_LICENSE="$(OBLIGATORY)"'\
+-D'PERMISSIVE_analpaper_SOFTWARE_LICENSE="$(PERMISSIVE)"'
 
 all K: $(SOURCE)
 
@@ -88,7 +118,7 @@ hlep hepl help:
 doc test:
 	@$(MAKE) -sC $@
 
-clean dist:
+clean check dist:
 ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
@@ -112,11 +142,11 @@ assets: src/bin/$(KSRC)/Makefile
 	;)
 	rm -rf /var/lib/K/assets
 
-assets.o: src/bin/$(KSRC)/$(KSRC).S
+assets.o: src/bin/$(KSRC)/$(KSRC).disk.S
 	$(chost)g++ -Wa,-I,$(KLOCAL)/assets,-I,src/bin/$(KSRC) -c $^ \
-	  -o $(KLOCAL)/lib/K-$(notdir $(basename $^))-$@
+	  -o $(KLOCAL)/lib/K-$(notdir $(basename $(basename $^)))-$@
 
-src: src/bin/$(KSRC)/$(KSRC).cxx
+src: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 ifdef KALL
 	unset KALL $(foreach chost,$(CARCH),&& $(MAKE) $@ CHOST=$(chost))
 else
@@ -124,14 +154,14 @@ else
 	$(if $(subst 8,,$(subst 7,,$(shell $(CHOST)-g++ -dumpversion | cut -d. -f1))),$(warning $(ERR));$(error $(HINT)))
 	@$(CHOST)-g++ --version
 	@mkdir -p $(KLOCAL)/bin
-	-@egrep ₿ src test -lR | xargs sed -i 's/₿/\\u20BF/g'
+	-@egrep ₿ src test -lR | xargs -r sed -i 's/₿/\\u20BF/g'
 	$(MAKE) $(shell test -n "`echo $(CHOST) | grep darwin`" && echo Darwin || (test -n "`echo $(CHOST) | grep mingw32`" && echo Win32 || uname -s)) CHOST=$(CHOST)
-	-@egrep \\u20BF src test -lR | xargs sed -i 's/\\u20BF/₿/g'
+	-@egrep \\u20BF src test -lR | xargs -r sed -i 's/\\u20BF/₿/g'
 	@chmod +x $(KLOCAL)/bin/K-$(KSRC)*
 	@$(MAKE) system_install -s
 endif
 
-Linux: src/bin/$(KSRC)/$(KSRC).cxx
+Linux: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
 ifdef TRAVIS_OS_NAME
 	@unset TRAVIS_OS_NAME && $(MAKE) KCOV="--coverage" $@
 else ifdef KUNITS
@@ -139,22 +169,22 @@ else ifdef KUNITS
 else ifndef KTEST
 	@$(MAKE) KTEST="-DNDEBUG" $@
 else
-	$(CHOST)-g++ $(KTEST) -o $(KLOCAL)/bin/K-$(KSRC) \
-	  -static-libstdc++ -static-libgcc -rdynamic     \
-	  $^ $(KARGS) -ldl -Wall -Wextra
+	$(CHOST)-g++ -s $(KTEST) -o $(KLOCAL)/bin/K-$(KSRC) \
+	  -static-libstdc++ -static-libgcc -rdynamic        \
+	  $< $(KARGS) -ldl -Wall -Wextra
 endif
 
-Darwin: src/bin/$(KSRC)/$(KSRC).cxx
-	-@egrep \\u20BF src -lR | xargs sed -i 's/\\\(u20BF\)/\1/g'
-	$(CHOST)-g++ -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC)                             \
+Darwin: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
+	-@egrep \\u20BF src -lR | xargs -r sed -i 's/\\\(u20BF\)/\1/g'
+	$(CHOST)-g++ -s -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC)                          \
 	  -msse4.1 -maes -mpclmul -mmacosx-version-min=10.13 -nostartfiles -rdynamic \
-	  $^ $(KARGS) -ldl
-	-@egrep u20BF src -lR | xargs sed -i 's/\(u20BF\)/\\\1/g'
+	  $< $(KARGS) -ldl
+	-@egrep u20BF src -lR | xargs -r sed -i 's/\(u20BF\)/\\\1/g'
 
-Win32: src/bin/$(KSRC)/$(KSRC).cxx
-	$(CHOST)-g++-posix -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC).exe \
-	  -D_POSIX -DCURL_STATICLIB                                \
-	  $^ $(KARGS)                                              \
+Win32: src/lib/Krypto.ninja-main.cxx src/bin/$(KSRC)/$(KSRC).main.h
+	$(CHOST)-g++-posix -s -DNDEBUG -o $(KLOCAL)/bin/K-$(KSRC).exe \
+	  -D_POSIX -DCURL_STATICLIB -DSIGUSR1=SIGABRT                 \
+	  $< $(KARGS)                                                 \
 	  -static -lstdc++ -lgcc -lwldap32 -lws2_32
 
 download:
@@ -203,7 +233,7 @@ install: packages
 	@read -p "[$(shell seq -s / `echo $(CARCH) | tr ' ' "\n" | wc -l`)]: " chost && $(MAKE) download CHOST=`echo $(CARCH) | cut -d ' ' -f$${chost}`
 
 docker: packages download
-	@sed -i "/Usage/,+87d" K.sh
+	@sed -i "/Usage/,+86d" K.sh
 
 reinstall:
 	test -d .git && ((test -n "`git diff`" && (echo && echo !!Local changes will be lost!! press CTRL-C to abort. && echo && sleep 5) || :) \
@@ -261,12 +291,10 @@ test-c:
 ifndef KSRC
 	@$(foreach src,$(SOURCE),$(MAKE) -s $@ KSRC=$(src);)
 else
-	@cp test/static_code_analysis.cxx test/static_code_analysis-$(KSRC).cxx
-	@sed -i "s/%/$(KSRC)/g" test/static_code_analysis-$(KSRC).cxx
-	@pvs-studio-analyzer analyze -e test/units.h -e $(KLOCAL)/include --source-file test/static_code_analysis-$(KSRC).cxx --cl-params -I. -Isrc/lib -I$(KLOCAL)/include test/static_code_analysis-$(KSRC).cxx && \
+	@pvs-studio-analyzer analyze -e src/bin/$(KSRC)/$(KSRC).test.h -e src/lib/Krypto.ninja-test.h -e $(KLOCAL)/include --source-file test/static_code_analysis.cxx --cl-params $(KARGS) test/static_code_analysis.cxx && \
 	  (echo $(KSRC) `plog-converter -a GA:1,2 -t tasklist -o report.tasks PVS-Studio.log | tail -n+8 | sed '/Total messages/d'` && cat report.tasks | sed '/Help: The documentation/d' && rm report.tasks) || :
-	@clang-tidy -header-filter=$(realpath src) -checks='modernize-*' test/static_code_analysis-$(KSRC).cxx -- $(KARGS) 2> /dev/null
-	@rm -f PVS-Studio.log test/static_code_analysis-$(KSRC).cxx > /dev/null 2>&1
+	@clang-tidy -header-filter=$(realpath src) -checks='modernize-*' test/static_code_analysis.cxx -- $(KARGS) 2> /dev/null
+	@rm -f PVS-Studio.log > /dev/null 2>&1
 endif
 
 #png: etc/${PNG}.png etc/${PNG}.json
@@ -276,33 +304,33 @@ endif
 #png-check: etc/${PNG}.png
 #	@test -n "`identify -verbose etc/${PNG}.png | grep 'K\.conf'`" && echo Configuration injected into etc/${PNG}.png OK, feel free to remove etc/${PNG}.json anytime. || echo nope, injection failed.
 
-checkOK:
+push:
 	@date=`date` && (git diff || :) && git status && read -p "KMOD: " KMOD \
 	&& git add . && git commit -S -m "$${KMOD}"                            \
 	&& ((KALL=1 $(MAKE) K doc release && git push) || git reset HEAD^1)    \
 	&& echo $${date} && date
 
 MAJOR:
-	@sed -i "s/^\(MAJOR    =\).*$$/\1 $(shell expr $(MAJOR) + 1)/" Makefile
-	@sed -i "s/^\(MINOR    =\).*$$/\1 0/" Makefile
-	@sed -i "s/^\(PATCH    =\).*$$/\1 0/" Makefile
-	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
-	@$(MAKE) checkOK
+	@sed -i "s/^\(MAJOR *=\).*$$/\1 $(shell expr $(MAJOR) + 1)/" Makefile
+	@sed -i "s/^\(MINOR *=\).*$$/\1 0/"                          Makefile
+	@sed -i "s/^\(PATCH *=\).*$$/\1 0/"                          Makefile
+	@sed -i "s/^\(BUILD *=\).*$$/\1 0/"                          Makefile
+	@$(MAKE) push
 
 MINOR:
-	@sed -i "s/^\(MINOR    =\).*$$/\1 $(shell expr $(MINOR) + 1)/" Makefile
-	@sed -i "s/^\(PATCH    =\).*$$/\1 0/" Makefile
-	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
-	@$(MAKE) checkOK
+	@sed -i "s/^\(MINOR *=\).*$$/\1 $(shell expr $(MINOR) + 1)/" Makefile
+	@sed -i "s/^\(PATCH *=\).*$$/\1 0/"                          Makefile
+	@sed -i "s/^\(BUILD *=\).*$$/\1 0/"                          Makefile
+	@$(MAKE) push
 
 PATCH:
-	@sed -i "s/^\(PATCH    =\).*$$/\1 $(shell expr $(PATCH) + 1)/" Makefile
-	@sed -i "s/^\(BUILD    =\).*$$/\1 0/" Makefile
-	@$(MAKE) checkOK
+	@sed -i "s/^\(PATCH *=\).*$$/\1 $(shell expr $(PATCH) + 1)/" Makefile
+	@sed -i "s/^\(BUILD *=\).*$$/\1 0/"                          Makefile
+	@$(MAKE) push
 
 BUILD:
-	@sed -i "s/^\(BUILD    =\).*$$/\1 $(shell expr $(BUILD) + 1)/" Makefile
-	@$(MAKE) checkOK
+	@sed -i "s/^\(BUILD *=\).*$$/\1 $(shell expr $(BUILD) + 1)/" Makefile
+	@$(MAKE) push
 
 release:
 ifdef KALL
@@ -324,4 +352,4 @@ md5: src
 asandwich:
 	@test `whoami` = 'root' && echo OK || echo make it yourself!
 
-.PHONY: all K $(SOURCE) hlep hepl help doc test src assets assets.o dist download clean cleandb list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff latest changelog test-c release md5 asandwich
+.PHONY: all K $(SOURCE) hlep hepl help doc test src assets assets.o clean check dist download cleandb list screen start stop restart startall stopall restartall packages system_install uninstall install docker reinstall diff latest changelog test-c push MAJOR MINOR PATCH BUILD release md5 asandwich

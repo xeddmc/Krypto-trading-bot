@@ -3,26 +3,43 @@ HINT     = This Makefile can't be used directly, consider cd ../.. before try ag
 $(if $(subst 0,,${MAKELEVEL}),,$(warning $(ERR));$(error $(HINT)))
 
 V_ZLIB  = 1.2.11
-V_SSL   = 1.1.1c
-V_ARES  = 1.15.0
-V_CURL  = 7.65.3
-V_SQL   = 3290000
+V_SSL   = 1.1.1g
+V_CURL  = 7.71.1
+V_SQL   = 3320300
 V_NCUR  = 6.1
-V_JSON  = 3.7.0
-V_CATCH = 2.9.1
-V_UV    = 1.30.1
+V_JSON  = 3.7.3
+V_CATCH = 2.11.1
+V_UV    = 1.38.1
 
 KBUILD := $(abspath ../../build-$(KHOST))
 
 all dist:
 	@mkdir -vp $(KBUILD)
-	$(MAKE) zlib openssl ares curl sqlite ncurses json catch libuv
+	$(MAKE) zlib openssl curl sqlite ncurses json catch uv
 ifdef TRAVIS_OS_NAME
 	$(MAKE) lcov pvs
 endif
 
 clean:
 	@rm -vrf $(KBUILD)
+
+check:
+	#zlib    $(V_ZLIB)
+	#zlib    $(shell curl -s https://www.zlib.net/ChangeLog.txt | grep "Changes in " | head -n1 | cut -d' ' -f3)
+	#openssl $(V_SSL)
+	#openssl $(shell curl -s https://www.openssl.org/news/cl$(shell curl -s https://www.openssl.org/source/ | grep "The latest stable version is " | cut -d' ' -f12  | tr -d '.').txt | grep "Changes between " | head -n1 | cut -d' ' -f4)
+	#curl    $(V_CURL)
+	#curl    $(shell curl -s https://curl.haxx.se/changes.html | grep "Fixed in " | head -n1 | cut -d' ' -f4)
+	#sqlite  $(V_SQL)
+	#sqlite  $(shell curl -s https://www.sqlite.org/download.html | grep "sqlite-amalgamation-" | head -n1 | cut -d'-' -f3 | cut -d'.' -f1)
+	#ncurses $(V_NCUR)
+	#ncurses $(shell curl -s https://www.gnu.org/software/ncurses/ | grep "Announcing " | head -n1 | cut -d' ' -f5 | cut -d'<' -f1)
+	#json    $(V_JSON)
+	#json    $(shell curl -s https://api.github.com/repos/nlohmann/json/tags   | grep "name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
+	#catch   $(V_CATCH)
+	#catch   $(shell curl -s https://api.github.com/repos/catchorg/Catch2/tags | grep "name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
+	#uv      $(V_UV)
+	#uv      $(shell curl -s https://api.github.com/repos/libuv/libuv/tags     | grep "name" | head -n1 | cut -d'v' -f2 | cut -d'"' -f1)
 
 zlib:
 	test -d $(KBUILD)/zlib-$(V_ZLIB) || (                                             \
@@ -35,26 +52,21 @@ zlib:
 openssl:
 	test -d $(KBUILD)/openssl-$(V_SSL) || (                                                   \
 	curl -L https://www.openssl.org/source/openssl-$(V_SSL).tar.gz | tar xz -C $(KBUILD)      \
-	&& cd $(KBUILD)/openssl-$(V_SSL) && CC=gcc                                                \
-	./Configure $(shell test -n "`echo $(CHOST) | grep mingw32`" && echo mingw64 || echo gcc) \
+	&& cd $(KBUILD)/openssl-$(V_SSL) && CC=gcc ./Configure no-asm                             \
+	$(shell test -n "`echo $(CHOST) | grep mingw32`" && echo mingw64 || echo gcc)             \
 	--cross-compile-prefix=$(CHOST)- --prefix=$(KBUILD)/local --openssldir=$(KBUILD)/local    \
 	&& sed -i "/extern int getentrop/,+4d" crypto/rand/rand_unix.c                            \
 	&& sed -i "s/^\(\#.*if\).*__ELF__.*$$/\1 1/" crypto/rand/rand_unix.c                      \
 	&& make all install_sw install_ssldirs                                                    )
 
-ares:
-	test -d $(KBUILD)/c-ares-$(V_ARES) || (                                                  \
-	curl -L https://c-ares.haxx.se/download/c-ares-$(V_ARES).tar.gz | tar xz -C $(KBUILD)    \
-	&& cd $(KBUILD)/c-ares-$(V_ARES) && ./configure --host=$(CHOST) --prefix=$(KBUILD)/local \
-	--disable-shared --enable-static && make all install                                     )
-
 curl:
 	test -d $(KBUILD)/curl-$(V_CURL) || (                                                   \
 	curl -L https://curl.haxx.se/download/curl-$(V_CURL).tar.gz | tar xz -C $(KBUILD)       \
 	&& cd $(KBUILD)/curl-$(V_CURL)                                                          \
-	&& CPPFLAGS=-DCARES_STATICLIB ./configure --host=$(CHOST) --prefix=$(KBUILD)/local      \
+	&& PKG_CONFIG="pkg-config --static" PKG_CONFIG_PATH=$(KBUILD)/local/lib/pkgconfig       \
+	./configure --host=$(CHOST) --prefix=$(KBUILD)/local                                    \
 	--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt                                     \
-	--with-zlib=$(KBUILD)/local --with-ssl=$(KBUILD)/local --enable-ares=$(KBUILD)/local    \
+	--with-zlib=$(KBUILD)/local --with-ssl=$(KBUILD)/local --disable-ares                   \
 	--disable-manual --disable-imap --disable-file --disable-tftp --disable-smtp            \
 	--disable-pop3 --disable-smb --disable-ftp --disable-sspi --disable-ldap --disable-dict \
 	--without-libpsl --without-nghttp2 --without-libssh2 --disable-telnet --disable-rtsp    \
@@ -63,7 +75,7 @@ curl:
 
 sqlite:
 	test -d $(KBUILD)/sqlite-autoconf-$(V_SQL) || (                                       \
-	curl -L https://sqlite.org/2019/sqlite-autoconf-$(V_SQL).tar.gz | tar xz -C $(KBUILD) \
+	curl -L https://sqlite.org/2020/sqlite-autoconf-$(V_SQL).tar.gz | tar xz -C $(KBUILD) \
 	&& cd $(KBUILD)/sqlite-autoconf-$(V_SQL) && ./configure --prefix=$(KBUILD)/local      \
 	--host=$(CHOST) --enable-static --disable-dynamic-extensions --disable-shared         \
 	--enable-threadsafe && make all install                                               )
@@ -76,7 +88,9 @@ ncurses:
 	--without-cxx-binding --without-ada --enable-reentrant --with-normal                              \
 	--disable-home-terminfo --enable-sp-funcs --enable-term-driver --enable-interop || :)             \
 	--disable-lib-suffixes --without-debug --without-progs --without-tests                            \
-	--with-fallbacks=linux,screen,vt100,xterm,xterm-256color,putty-256color && make all install       )
+	--with-fallbacks=linux,screen,vt100,xterm,xterm-256color,putty-256color && make all install       \
+	&& (test -n "`echo $(CHOST) | grep mingw32`"                                                      \
+	&& sed -i '1 i\#undef KEY_EVENT' $(KBUILD)/local/include/ncurses/curses.h || :)                   )
 
 json:
 	test -f $(KBUILD)/local/include/json.h || (mkdir -p $(KBUILD)/local/include       \
@@ -91,7 +105,7 @@ catch:
 	&& curl -L https://github.com/catchorg/Catch2/releases/download/v$(V_CATCH)/catch.hpp \
 	-o $(KBUILD)/local/include/catch.h                                                    )
 
-libuv:
+uv:
 	test -z "`echo $(CHOST) | grep darwin;echo $(CHOST) | grep mingw32`" || test -d $(KBUILD)/libuv-$(V_UV) || ( \
 	curl -L https://github.com/libuv/libuv/archive/v$(V_UV).tar.gz | tar xz -C $(KBUILD)                         \
 	&& cd $(KBUILD)/libuv-$(V_UV) && sh autogen.sh && CC=$(CHOST)-clang ./configure --host=$(CHOST)              \
@@ -116,4 +130,4 @@ else
 	| tar xz -C $(KBUILD) && cd $(KBUILD)/lcov-$(V_LCOV) && sudo make install                             )
 endif
 
-.PHONY: all dist clean zlib openssl curl sqlite ncurses json catch libuv lcov pvs
+.PHONY: all dist clean check zlib openssl curl sqlite ncurses json catch uv lcov pvs

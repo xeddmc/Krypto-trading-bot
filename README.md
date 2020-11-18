@@ -7,7 +7,6 @@
 [![Code Size](https://img.shields.io/github/languages/code-size/ctubio/Krypto-trading-bot.svg)](https://github.com/ctubio/Krypto-trading-bot)
 [![Software License](https://img.shields.io/badge/license-ISC-551a8b.svg)](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/LICENSE)
 [![Software License](https://img.shields.io/badge/license-MIT-551a8b.svg)](https://raw.githubusercontent.com/ctubio/Krypto-trading-bot/master/COPYING)
-[![Bounties](https://img.shields.io/bountysource/team/Krypto-trading-bot/activity.svg)](https://www.bountysource.com/teams/krypto-trading-bot/issues)
 
 [`K`](https://github.com/ctubio/Krypto-trading-bot) is a very low latency [market making](https://github.com/ctubio/Krypto-trading-bot/blob/master/doc/MANUAL.md#what-is-market-making) trading bot with a fully featured [web interface](https://github.com/ctubio/Krypto-trading-bot#web-ui). The bot can place and cancel orders on one of [several supported cryptocoin exchanges](https://github.com/ctubio/Krypto-trading-bot#compatible-exchanges) in less than a few miliseconds per order on a decent machine.
 
@@ -31,7 +30,7 @@ The web UI is compatible with most web browsers/devices/resolutions, but Firefox
 ||with Post-Only Orders support|without Post-Only|
 |---|---|---|
 |**without Maker fees**|[BitMEX](https://www.bitmex.com/) <sub>([fees](https://www.bitmex.com/app/fees))</sub><br> &#10239; _REST + WebSocket_|*none*|
-|**with Maker and Taker fees**|[Coinbase](https://pro.coinbase.com/) <sub>([fees](https://pro.coinbase.com/orders/fees))</sub><br> &#10239; _REST + WebSocket + FIX_<br><br>[HitBTC](https://hitbtc.com/) <sub>([fees](https://hitbtc.com/fee-tier))</sub><br>[Bequant](https://bequant.io/) <sub>([fees](https://bequant.io/fees-and-limits))</sub><br> &#10239; _REST + WebSocket_<br><br>[Bitfinex](https://www.bitfinex.com/) <sub>([fees](https://www.bitfinex.com/fees))</sub><br>[Ethfinex](https://www.ethfinex.com/) <sub>([fees](https://www.ethfinex.com/fees))</sub><br> &#10239; _REST + WebSocket_<br><br>[Kraken](https://www.kraken.com/) <sub>([fees](https://www.kraken.com/features/fee-schedule))</sub><br> &#10239; _REST_<br><br>[Poloniex](https://www.poloniex.com/) <sub>([fees](https://poloniex.com/fees/))</sub><br> &#10239; _REST_|[FCoin](https://fcoin.com/) <sub>([fees](https://support.fcoin.com/hc/en-us/articles/360003715514))</sub><br> &#10239; _REST + WebSocket_|
+|**with Maker and Taker fees**|[Coinbase](https://pro.coinbase.com/) <sub>([fees](https://pro.coinbase.com/orders/fees))</sub><br> &#10239; _REST + WebSocket + FIX_<br><br>[HitBTC](https://hitbtc.com/) <sub>([fees](https://hitbtc.com/fee-tier))</sub><br>[Bequant](https://bequant.io/) <sub>([fees](https://bequant.io/fees-and-limits))</sub><br> &#10239; _REST + WebSocket_<br><br>[Bitfinex](https://www.bitfinex.com/) <sub>([fees](https://www.bitfinex.com/fees))</sub><br>[Ethfinex](https://www.ethfinex.com/) <sub>([fees](https://www.ethfinex.com/fees))</sub><br> &#10239; _REST + WebSocket_<br><br>[Kraken](https://www.kraken.com/) <sub>([fees](https://www.kraken.com/features/fee-schedule))</sub><br> &#10239; _REST_<br><br>[Poloniex](https://www.poloniex.com/) <sub>([fees](https://poloniex.com/fees/))</sub><br> &#10239; _REST_|*none*|
 
 All currency pairs are supported.
 
@@ -60,8 +59,8 @@ All currency pairs are supported.
 - Humans and Milk Mammals
   - [Unlock](#unlock)
   - [Donations](#donations)
-  - [Very Special Thanks](#very-special-thanks-to)
   - [General Discussion](#general-discussion)
+  - [Very Special Thanks](#very-special-thanks-to)
   - [Help](#help)
   - [Issues](#issues)
 
@@ -185,7 +184,7 @@ After multiple config files are setup, to control them all together instead of o
 
 Once `K` is up and running, visit HTTPS port `3000` (or your configured port number) to access the UI (i.e. [https://localhost:3000](https://localhost:3000)). There are inputs for quoting parameters, grids to display market orders, market trades, your trades, your order history, your positions, and a big button with the currency pair you are trading. When you're ready, click that button green to begin sending out quotes. The UI uses angularjs hydrated with websockets observed with reactivexjs.
 
-If you want to generate your own certificate see [SSL for internal usage](http://www.akadia.com/services/ssh_test_certificate.html).
+If you want to generate your own certificate see [SSL for internal usage](https://www.akadia.com/services/ssh_test_certificate.html).
 
 In case you really want to use plain HTTP, use `--without-ssl` argument.
 
@@ -265,7 +264,7 @@ Added test units.
 
 Added --interface=IP argument to bind outgoing traffic to a specific network interface.
 
-Added Ethfinex and FCoin API.
+Added Ethfinex ~~and FCoin~~ API.
 
 Added build-in document root to stop reading files from disk.
 
@@ -359,7 +358,11 @@ nope, this project doesn't have maintenance costs. but you can donate to your fa
 
 or see the upstream project [michaelgrosner/tribeca](https://github.com/michaelgrosner/tribeca).
 
-or donate your time with programming or financial suggestions in the IRC channel [#tradingBot](https://kiwiirc.com/client/irc.freenode.net:6697/?theme=cli#tradingBot) at irc.freenode.net on port 6697 (SSL), or 6667 (plain) or feel free to make any question, but questions technically are not donations.
+or donate your time with programming or financial suggestions in the IRC channel [#tradingBot](https://kiwiirc.com/client/irc.freenode.net:6697/?theme=cli#tradingBot) at irc.freenode.net on port 6697 (SSL), or 6667 (plain); or feel free to make any question, but questions technically are not donations.
+
+### General Discussion
+
+[IRC](https://kiwiirc.com/client/irc.freenode.net:6697/?theme=cli#tradingBot) is awesome!
 
 ### Very Special Thanks to:
 
@@ -376,10 +379,6 @@ or donate your time with programming or financial suggestions in the IRC channel
 - https://github.com/michaelgrosner/tribeca (https://github.com/michaelgrosner)
 - but Most Special Thanks goes to [your mother](https://youtu.be/YDafHsyyTNk).
 
-### General Discussion
-
-[IRC](https://kiwiirc.com/client/irc.freenode.net:6697/?theme=cli#tradingBot) is awesome!<br/>but if you dislike it, there is an unofficial Discord channel at https://discord.gg/vdZHyJH (with nice users but without me).
-
 ### Help
 
 If you need installation or usage support contact me at [earn.com/analpaper](https://earn.com/analpaper/) (non-free high-priority service).
@@ -390,9 +389,7 @@ To request new features open a [new issue](https://github.com/ctubio/Krypto-trad
 
 To report errors open a [new issue](https://github.com/ctubio/Krypto-trading-bot/issues/new?title=Error%20report) only after collecting all possible relevant log messages.
 
-For fun (not required), everybody can create or claim bounties related to any issue at [bountysource.com](https://www.bountysource.com/teams/krypto-trading-bot/issues).
-
-Consequently, Pull Requests are welcome, but adhere to the Contributor License Agreement:
+Pull Requests are welcome, but adhere to the Contributor License Agreement:
 - Your biological and technological distinctiveness will be added to our own. Resistance is futile.
 
 ### like yesterday, since 0day and ∞
@@ -430,4 +427,4 @@ We have already enough policemen,<br />if you like adventures choose to be a <a 
 <br /><br /><br /><br />Violence <a href="https://www.cnvc.org/learn-nvc/what-is-nvc">should not</a> be the answer to those who<br />are <a href="https://novact.org/about-us/activities/?lang=en">asking for</a> freedom.<br /><br /><br /><br /><br />
 <img src="https://user-images.githubusercontent.com/1634027/29746351-7478d556-8ad7-11e7-8b27-445eefa8f960.jpg" />
 <br /><br /><br /><br /><br /><br /><br /><br /><br />
-<img width="300" src="http://hits.dwyl.io/ctubio/Krypto-trading-bot.svg" /></p>
+<img width="300" src="http://hits.dwyl.io/ctubio/Krypto-trading-bot.svg" /> + 99999</p>
